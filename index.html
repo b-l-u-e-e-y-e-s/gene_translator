@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>DNA Code</title>
+    </head>
+    <body>
+        The DNA Code allows to translate the DNA or RNA<br>
+        into an amino acid sequence, get information on the molecular weight<br>
+        of the peptide, and contribution of particular amino acid groups as well.<br>
+        Protein name is included in a PDF report.<br><br>
+        <form action="result.php" method="post">
+            Protein name<br>
+            <input name="name" type="text"><br><br>
+            Insert the DNA or RNA sequence<br>
+            <textarea name="ntseq" id="area" rows="10" cols="50"></textarea><br>
+            <input type="submit" id="form-input__button" value="Translate">
+        </form>
+        <script>
+            const area = document.getElementById("area");
+            area.addEventListener("keyup", function (event) {
+                event.preventDefault();
+                if (event.keyCode === 13) {
+                    document.getElementById("form-input__button").click();
+                }
+            });
+        </script>
+    </body>
+</html>
