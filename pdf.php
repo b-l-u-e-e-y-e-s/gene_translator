@@ -17,14 +17,14 @@ $pdf->SetFont('Helvetica', '', 10);
 $pdf->MultiCell(190, 6, $_SESSION['seq']);
 $pdf->Ln(10);
 
-//more stops
+//note if more than 1 stop
 if($_SESSION['stop'] > 1):
     $pdf->SetFont('Helvetica', '', 12);
     $pdf->Cell(190, 6, 'Note: The sequence includes more than one stop codons!');
     $pdf->Ln(20);
 endif;
 
-//number and weight
+//number of amino acids and molecular weight of a peptide
 $pdf->SetFont('Helvetica', '', 12);
 $pdf->Cell(60, 6, 'Number of amino acids:');
 $pdf->Cell(130, 6, $_SESSION['aa number'], 0, 1);
@@ -32,7 +32,7 @@ $pdf->Cell(60, 6, 'Molecular weight:');
 $pdf->Cell(130, 6, $_SESSION['weight'] . ' kDa', 0, 1);
 $pdf->Ln(10);
 
-//properties
+//number of amino acids by properties
 $pdf->Cell(60, 6, 'Basic amino acids:');
 $pdf->Cell(130, 6, $_SESSION['basic'] . ' (' . $_SESSION['contr 1'] . '%)', 0, 1);
 $pdf->Cell(60, 6, 'Acidic amino acids:');
@@ -44,3 +44,5 @@ $pdf->Cell(130, 6, $_SESSION['hydrophobic'] . ' (' . $_SESSION['contr 4'] . '%)'
 
 //output
 $pdf->Output();
+
+session_destroy();

@@ -4,7 +4,16 @@ session_start();
 $ntseq = $_POST["ntseq"];
 $name = $_POST["name"];
 
-//format an input
+/* input validation:
+ * not valid if empty
+ * not valid if other letters than nucleotides
+ * numbers and spaces allowed */
+
+if($ntseq === '' OR $name === ''):
+    header("Location: index.html");
+    exit;
+endif;
+
 if (preg_match('/[^AaCcGgTtUu|0-9|" *"|\r\n]/', $ntseq)):
     die('Wrong sequence format.');
 else:
@@ -101,7 +110,7 @@ echo '</p>';
 
 $seq = implode('', $aa_seq);
 
-//nucleotides left
+//count nucleotides in the last array value and notify if 1 or 2 left
 $last = strlen(end($codons));
 
 if($last === 1):
@@ -110,7 +119,7 @@ elseif($last === 2):
     echo '<br><br>Note: ' . $last . ' nucleotides left';
 endif;
 
-//calculate number of amino acids
+//count amino acids (without stop)
 $stop = count(array_keys($aa_seq, 'stop'));
 if ($stop > 1): echo '<br><br>Note: The sequence includes more than one stop codons!';
 endif;
@@ -118,7 +127,7 @@ endif;
 $count_seq = count($aa_seq) - $stop;
 echo '<br><br>Number of amino acids: ' . $count_seq;
 
-//calculate molecular weight of a peptide
+//calculate molecular weight of a peptide in a kDa unit
 $mv = [
     'A' => 89,
     'R' => 174,
@@ -155,7 +164,7 @@ endforeach;
 $mv_value = (array_sum($mv_seq)) / 1000;
 echo '<br>Molecular weight: ' . $mv_value . ' kDa';
 
-//calculate amino acids by properties - basic
+//count amino acids by properties - basic
 $k = count(array_keys($aa_seq, 'K'));
 $r = count(array_keys($aa_seq, 'R'));
 $h = count(array_keys($aa_seq, 'H'));
@@ -164,7 +173,7 @@ $basic = $k + $r + $h;
 $contr_1 = round($basic * 100 / $count_seq, 2);
 echo '<br><br>Basic amino acids: ' . $basic . ' (' . $contr_1 . '%)';
 
-//calculate amino acids by properties - acidic
+//count amino acids by properties - acidic
 $d = count(array_keys($aa_seq, 'D'));
 $e = count(array_keys($aa_seq, 'E'));
 
@@ -172,7 +181,7 @@ $acidic = $d + $e;
 $contr_2 = round($acidic * 100 / $count_seq, 2);
 echo '<br>Acidic amino acids: ' . $acidic . ' (' . $contr_2 . '%)';
 
-//calculate amino acids by properties - hydrophilic
+//count amino acids by properties - hydrophilic
 $c = count(array_keys($aa_seq, 'C'));
 $s = count(array_keys($aa_seq, 'S'));
 $t = count(array_keys($aa_seq, 'T'));
@@ -184,7 +193,7 @@ $hydrophilic = $c + $s + $t + $q + $n + $y;
 $contr_3 = round($hydrophilic * 100 / $count_seq, 2);
 echo '<br>Hydrophilic amino acids: ' . $hydrophilic . ' (' . $contr_3 . '%)';
 
-//calculate amino acids by properties - hydrophobic
+//count amino acids by properties - hydrophobic
 $g = count(array_keys($aa_seq, 'G'));
 $a = count(array_keys($aa_seq, 'A'));
 $v = count(array_keys($aa_seq, 'V'));
@@ -199,6 +208,7 @@ $hydrophobic = $g + $a + $v + $l + $i + $m + $f + $p + $w;
 $contr_4 = round($hydrophobic * 100 / $count_seq, 2);
 echo '<br>Hydrophobic amino acids: ' . $hydrophobic . ' (' . $contr_4 . '%)';
 
+//sessions: data needed to pdf report
 $_SESSION['name'] = $name;
 $_SESSION['seq'] = $seq;
 $_SESSION['aa number'] = $count_seq;
@@ -212,3 +222,8 @@ $_SESSION['contr 2'] = $contr_2;
 $_SESSION['contr 3'] = $contr_3;
 $_SESSION['contr 4'] = $contr_4;
 $_SESSION['stop'] = $stop;
+//<a href="pdf.php">PDF Report</a>
+?>
+
+<br><br>
+<a href="pdf.php" target="_blank">PDF Report</a>
