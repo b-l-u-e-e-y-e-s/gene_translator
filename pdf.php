@@ -1,6 +1,6 @@
 <?php
 session_start();
-require('library/FPDF/fpdf.php');
+require('FPDF/fpdf.php');
 
 //title
 $pdf = new FPDF();
