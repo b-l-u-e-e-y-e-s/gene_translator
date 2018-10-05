@@ -7,26 +7,17 @@ $name = $_POST["name"];
 /* input validation:
  * not valid if empty
  * not valid if other letters than nucleotides
+ * not valid if less than three nucleotides
  * numbers and spaces allowed */
 
-if($ntseq === '' OR $name === ''):
-    header("Location: index.html");
-    exit;
-endif;
-
-if (preg_match('/[^AaCcGgTtUu|0-9|" *"|\r\n]/', $ntseq)):
+if ((empty($ntseq)) || (empty($name)) || (preg_match('/[^AaCcGgTtUu0-9 \n\r]/', $ntseq)) || (!preg_match('/[AaCcGgTtUu]{3,}/', $ntseq))) {
     die('Wrong sequence format.');
-else:
+} else {
     $seq_lower = strtolower($ntseq);
     $dna_rna = str_replace('t', 'u', $seq_lower);
     $new_seq = preg_replace('/[^a-z]/', "", $dna_rna);
-endif;
-
-//split a sequence to create codons
-$codons = str_split($new_seq, 3);
-
-//translate codons to amino acids (aa)
-echo 'Amino acids sequence:<br><br>';
+    $codons = str_split($new_seq, 3);
+}
 
 $aa = [
     'uuu' => 'F',
@@ -95,39 +86,6 @@ $aa = [
     'ggg' => 'G',
 ];
 
-$aa_seq = [];
-
-echo '<p style="word-break: break-all;width: 625px;">';
-foreach ($codons as $k1 => $v1):
-    foreach ($aa as $k2 => $v2):
-        if ($v1 === $k2):
-            array_push($aa_seq, $v2);
-            echo $v2;
-        endif;
-    endforeach;
-endforeach;
-echo '</p>';
-
-$seq = implode('', $aa_seq);
-
-//count nucleotides in the last array value and notify if 1 or 2 left
-$last = strlen(end($codons));
-
-if($last === 1):
-    echo '<br><br>Note: ' . $last . ' nucleotide left';
-elseif($last === 2):
-    echo '<br><br>Note: ' . $last . ' nucleotides left';
-endif;
-
-//count amino acids (without stop)
-$stop = count(array_keys($aa_seq, 'stop'));
-if ($stop > 1): echo '<br><br>Note: The sequence includes more than one stop codons!';
-endif;
-
-$count_seq = count($aa_seq) - $stop;
-echo '<br><br>Number of amino acids: ' . $count_seq;
-
-//calculate molecular weight of a peptide in a kDa unit
 $mv = [
     'A' => 89,
     'R' => 174,
@@ -151,79 +109,96 @@ $mv = [
     'V' => 117,
 ];
 
-$mv_seq = [];
+$basic = ['K', 'R', 'H'];
+$acidic = ['D', 'E'];
+$hydrophilic = ['C', 'S', 'T', 'Q', 'N', 'Y'];
+$hydrophobic = ['G', 'A', 'V', 'L', 'I', 'M', 'F', 'P', 'W'];
 
-foreach ($aa_seq as $k3 => $v3):
-    foreach ($mv as $k4 => $v4):
-        if ($v3 === $k4):
-            array_push($mv_seq, $v4);
-        endif;
-    endforeach;
-endforeach;
+function compareArrays($arr1, $arr2) {
+    foreach ($arr1 as $v) {
+        if (isset($arr2[$v])) {
+            $arr3[] = $arr2[$v];
+        }
+    }
+    return $arr3;
+}
 
+function countSeq($arr1, $arr2) {
+    foreach ($arr1 as $v) {
+        $keys[] = count(array_keys($arr2, $v));
+        $sum_keys = array_sum($keys);
+    }
+    return $sum_keys;
+}
+
+function contribution($total, $arr1, $arr2) {
+    $a = countSeq($arr1, $arr2);
+    $round = round($a * 100 / $total, 2);
+    return $round;
+}
+
+//amino acids sequence
+$aa_seq = compareArrays($codons, $aa);
+$seq = implode('', $aa_seq);
+
+//number of amino acids
+$last = strlen(end($codons));
+$stop = count(array_keys($aa_seq, 'stop'));
+$count_seq = count($aa_seq) - $stop;
+
+//molecular weight
+$mv_seq = compareArrays($aa_seq, $mv);
 $mv_value = (array_sum($mv_seq)) / 1000;
-echo '<br>Molecular weight: ' . $mv_value . ' kDa';
-
-//count amino acids by properties - basic
-$k = count(array_keys($aa_seq, 'K'));
-$r = count(array_keys($aa_seq, 'R'));
-$h = count(array_keys($aa_seq, 'H'));
-
-$basic = $k + $r + $h;
-$contr_1 = round($basic * 100 / $count_seq, 2);
-echo '<br><br>Basic amino acids: ' . $basic . ' (' . $contr_1 . '%)';
-
-//count amino acids by properties - acidic
-$d = count(array_keys($aa_seq, 'D'));
-$e = count(array_keys($aa_seq, 'E'));
-
-$acidic = $d + $e;
-$contr_2 = round($acidic * 100 / $count_seq, 2);
-echo '<br>Acidic amino acids: ' . $acidic . ' (' . $contr_2 . '%)';
-
-//count amino acids by properties - hydrophilic
-$c = count(array_keys($aa_seq, 'C'));
-$s = count(array_keys($aa_seq, 'S'));
-$t = count(array_keys($aa_seq, 'T'));
-$q = count(array_keys($aa_seq, 'Q'));
-$n = count(array_keys($aa_seq, 'N'));
-$y = count(array_keys($aa_seq, 'Y'));
-
-$hydrophilic = $c + $s + $t + $q + $n + $y;
-$contr_3 = round($hydrophilic * 100 / $count_seq, 2);
-echo '<br>Hydrophilic amino acids: ' . $hydrophilic . ' (' . $contr_3 . '%)';
-
-//count amino acids by properties - hydrophobic
-$g = count(array_keys($aa_seq, 'G'));
-$a = count(array_keys($aa_seq, 'A'));
-$v = count(array_keys($aa_seq, 'V'));
-$l = count(array_keys($aa_seq, 'L'));
-$i = count(array_keys($aa_seq, 'I'));
-$m = count(array_keys($aa_seq, 'M'));
-$f = count(array_keys($aa_seq, 'F'));
-$p = count(array_keys($aa_seq, 'P'));
-$w = count(array_keys($aa_seq, 'W'));
-
-$hydrophobic = $g + $a + $v + $l + $i + $m + $f + $p + $w;
-$contr_4 = round($hydrophobic * 100 / $count_seq, 2);
-echo '<br>Hydrophobic amino acids: ' . $hydrophobic . ' (' . $contr_4 . '%)';
 
 //sessions: data needed to pdf report
 $_SESSION['name'] = $name;
 $_SESSION['seq'] = $seq;
 $_SESSION['aa number'] = $count_seq;
 $_SESSION['weight'] = $mv_value;
-$_SESSION['basic'] = $basic;
-$_SESSION['acidic'] = $acidic;
-$_SESSION['hydrophilic'] = $hydrophilic;
-$_SESSION['hydrophobic'] = $hydrophobic;
-$_SESSION['contr 1'] = $contr_1;
-$_SESSION['contr 2'] = $contr_2;
-$_SESSION['contr 3'] = $contr_3;
-$_SESSION['contr 4'] = $contr_4;
+$_SESSION['basic'] = countSeq($basic, $aa_seq);
+$_SESSION['acidic'] = countSeq($acidic, $aa_seq);
+$_SESSION['hydrophilic'] = countSeq($hydrophilic, $aa_seq);
+$_SESSION['hydrophobic'] = countSeq($hydrophobic, $aa_seq);
+$_SESSION['contr 1'] = contribution($count_seq, $basic, $aa_seq);
+$_SESSION['contr 2'] = contribution($count_seq, $acidic, $aa_seq);
+$_SESSION['contr 3'] = contribution($count_seq, $hydrophilic, $aa_seq);
+$_SESSION['contr 4'] = contribution($count_seq, $hydrophobic, $aa_seq);
 $_SESSION['stop'] = $stop;
-//<a href="pdf.php">PDF Report</a>
 ?>
 
-<br><br>
-<a href="pdf.php" target="_blank">PDF Report</a>
+<html>
+    <head>
+        <title>DNA Code</title>
+    </head>
+    <body>
+        <p>
+            Amino acids sequence:<br><br>
+        </p>
+        <p style="word-break:break-all; width:625px;">
+            <?php echo $seq ?>
+        </p>
+        <p>
+            <?php
+            if ($last === 1):
+                echo 'Note: ' . $last . ' nucleotide left<br>';
+            elseif ($last === 2):
+                echo 'Note: ' . $last . ' nucleotides left<br>';
+            endif
+            ?>
+            <?php 
+            if ($stop > 1):
+                echo 'Note: The sequence includes more than one stop codons!';
+            endif
+            ?>  
+        </p>
+        <p>
+            Number of amino acids: <?php echo $count_seq ?><br>
+            Molecular weight: <?php echo $mv_value ?> kDa<br><br>
+            Basic amino acids: <?php echo countSeq($basic, $aa_seq) . ' (' . contribution($count_seq, $basic, $aa_seq) . '%)' ?><br>
+            Acidic amino acids: <?php echo countSeq($acidic, $aa_seq) . ' (' . contribution($count_seq, $acidic, $aa_seq) . '%)' ?><br>
+            Hydrophilic amino acids: <?php echo countSeq($hydrophilic, $aa_seq) . ' (' . contribution($count_seq, $hydrophilic, $aa_seq) . '%)' ?><br>
+            Hydrophobic amino acids: <?php echo countSeq($hydrophobic, $aa_seq) . ' (' . contribution($count_seq, $hydrophobic, $aa_seq) . '%)' ?><br>
+        </p>
+        <a href="pdf.php" target="_blank">PDF Report</a>
+    </body>
+</html>
